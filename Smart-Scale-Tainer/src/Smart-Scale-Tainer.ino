@@ -1,18 +1,39 @@
 /*
  * Project Smart-Scale-Tainer
- * Description:
- * Author:
- * Date:
+ * Description: Capstone Project Smart Scale for inventory needs
+ * Author: Jericho Ortiz
+ * Date: 11/29/2021
  */
 
-// setup() runs once, when the device is first turned on.
+//******************LIBRARIES************************************************
+#include "credentials.h"
+#include "HX711.h"
+
+HX711 scale(D3,D2);
+
+//******************DECLARATIONS************************************************
+const int CAL_FACTOR = 1727;
+const int SAMPLES = 30;
+float weight, rawData, calibration;
+int offset;
+
+
+SYSTEM_MODE(SEMI_AUTOMATIC);
+
 void setup() {
-  // Put initialization like pinMode and begin functions here.
-
+  Serial.begin(9600);
+  scale.set_scale();
+  delay(5000);
+  scale.tare();  //Reset the scale to 0
+  scale.set_scale(CAL_FACTOR);
 }
 
-// loop() runs over and over again, as quickly as it can execute.
 void loop() {
-  // The core of your code will likely live here.
-
-}
+  weight = scale.get_units(SAMPLES);
+  // delay(1000);
+  rawData = scale.get_value(SAMPLES);
+  offset = scale.get_offset();
+  calibration = scale.get_scale();
+  Serial.println(scale.get_units(SAMPLES));
+  // delay(500);
+  }
