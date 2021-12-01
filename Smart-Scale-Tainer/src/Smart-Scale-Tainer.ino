@@ -8,15 +8,20 @@
 //******************LIBRARIES************************************************
 #include "credentials.h"
 #include "HX711.h"
+#include "wire.h"
+#include "AdaFruit_SSD1306.h"
 
-HX711 scale(D3,D2);
+
 
 //******************DECLARATIONS************************************************
 const int CAL_FACTOR = 1727;
 const int SAMPLES = 30;
+const int OLED_RESET = D4;
 float weight, rawData, calibration;
 int offset;
 
+HX711 scale(D3,D2);
+Adafruit_SSD1306 display(OLED_RESET);
 
 SYSTEM_MODE(SEMI_AUTOMATIC);
 
@@ -26,6 +31,14 @@ void setup() {
   delay(5000);
   scale.tare();  //Reset the scale to 0
   scale.set_scale(CAL_FACTOR);
+  display.begin(SSD1306_SWITCHCAPVCC, 0x3C);
+  display.display();
+  display.clearDisplay();
+  display.drawPixel(10, 10, WHITE);
+  display.display();
+  display.println(scale.get_units(SAMPLES));
+  delay(500);
+  display.clearDisplay();
 }
 
 void loop() {
@@ -36,4 +49,7 @@ void loop() {
   calibration = scale.get_scale();
   Serial.println(scale.get_units(SAMPLES));
   // delay(500);
+  }
+
+  void startOLED() {
   }
