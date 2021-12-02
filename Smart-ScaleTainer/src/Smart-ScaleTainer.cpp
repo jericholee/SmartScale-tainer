@@ -23,13 +23,11 @@
 #include "Adafruit_MQTT/Adafruit_MQTT_SPARK.h"
 
 
-
-
 //******************DECLARATIONS************************************************
 void setup();
 void loop();
 void startOLED();
-#line 23 "c:/Users/jeric/Desktop/IoT/SmartScale-tainer/Smart-ScaleTainer/src/Smart-ScaleTainer.ino"
+#line 21 "c:/Users/jeric/Desktop/IoT/SmartScale-tainer/Smart-ScaleTainer/src/Smart-ScaleTainer.ino"
 const int CAL_FACTOR = 1719;
 const int CAL_FACTOR2 = 1748;
 const int SAMPLES = 10;
@@ -38,7 +36,7 @@ const int OLED_RESET = D4;
 float weight, weight2, rawData, calibration;
 int offset;
 
-// set up keypad buttons
+//*********************KEYPAD SETUP**********************************
 const byte ROWS = 4;
 const byte COLS = 4;
 char keys[ROWS][COLS] = {
@@ -50,7 +48,7 @@ char keys[ROWS][COLS] = {
 byte rowPins[ROWS] = { A3, A2, A1, D4 };
 byte colPins[COLS] = { D5, D6, D7, D8 };
 
-// create Keypad object variable called "keypad"
+// ******************CREATED KEYPAD OBJECT VARIABLE "KEYPAD"******************
 Keypad keypad = Keypad( makeKeymap(keys), rowPins, colPins, ROWS, COLS );
 
 HX711 scale(D3,D2);
@@ -58,11 +56,16 @@ HX711 scale2(D10,D9);
 Adafruit_SSD1306 display(OLED_RESET);
 Servo myServo;
 TCPClient TheClient;
+Adafruit_MQTT_SPARK mqtt(&TheClient,AIO_SERVER ,AIO_SERVERPORT, AIO_USERNAME,AIO_KEY);
 
-SYSTEM_MODE(SEMI_AUTOMATIC);
+Adafruit_MQTT_Publish WeightObj = Adafruit_MQTT_Publish(&mqtt,AIO_USERNAME"/feeds/Weight One Read");
+Adafruit_MQTT_Publish Weight2Obj = Adafruit_MQTT_Publish(&mqtt,AIO_USERNAME"/feeds/Weight Two Read");
+
 
 void setup() {
   Serial.begin(9600);
+  delay(2000);
+  Serial.printf("Hello World\n");
   scale.set_scale();
   scale2.set_scale();
   delay(5000);
@@ -74,9 +77,15 @@ void setup() {
   myServo.attach(5);
 }
 
+
 void loop() {
+  delay(250);
   weight = scale.get_units(SAMPLES);
   weight2 = scale2.get_units(SAMPLES);
+  waitFor(Serial.isConnected, 15000);
+  WiFi.connect();
+  while(WiFi.connecting()) {
+  Serial.printf(".");  
   Serial.println(weight);
   Serial.println(weight2);
   display.clearDisplay();
@@ -90,8 +99,10 @@ void loop() {
     if (key){
       Serial.println(key);
     }
-  // delay(500);
+  delay(500);
   }
+}
+
 
   void startOLED() {
   display.begin(SSD1306_SWITCHCAPVCC, 0x3C);
