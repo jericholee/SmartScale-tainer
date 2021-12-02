@@ -27,12 +27,14 @@
 void setup();
 void loop();
 void startOLED();
+void MQTT_connect();
 #line 21 "c:/Users/jeric/Desktop/IoT/SmartScale-tainer/Smart-ScaleTainer/src/Smart-ScaleTainer.ino"
 const int CAL_FACTOR = 1719;
 const int CAL_FACTOR2 = 1748;
 const int SAMPLES = 10;
 const int OLED_RESET = D4;
 
+unsigned long last, lastTime;
 float weight, weight2, rawData, calibration;
 int offset;
 
@@ -58,12 +60,16 @@ Servo myServo;
 TCPClient TheClient;
 Adafruit_MQTT_SPARK mqtt(&TheClient,AIO_SERVER ,AIO_SERVERPORT, AIO_USERNAME,AIO_KEY);
 
-Adafruit_MQTT_Publish WeightObj = Adafruit_MQTT_Publish(&mqtt,AIO_USERNAME"/feeds/Weight One Read");
-Adafruit_MQTT_Publish Weight2Obj = Adafruit_MQTT_Publish(&mqtt,AIO_USERNAME"/feeds/Weight Two Read");
+Adafruit_MQTT_Publish WeightObj = Adafruit_MQTT_Publish(&mqtt,AIO_USERNAME"/feeds/WeightOneRead");
+Adafruit_MQTT_Publish Weight2Obj = Adafruit_MQTT_Publish(&mqtt,AIO_USERNAME"/feeds/WeightTwoRead");
 
 
 void setup() {
   Serial.begin(9600);
+    waitFor(Serial.isConnected, 15000);
+  WiFi.connect();
+  while(WiFi.connecting()) {
+  Serial.printf("."); 
   delay(2000);
   Serial.printf("Hello World\n");
   scale.set_scale();
@@ -75,17 +81,35 @@ void setup() {
   scale2.set_scale(CAL_FACTOR2);
   startOLED();
   myServo.attach(5);
+ }
 }
 
-
 void loop() {
-  delay(250);
+  if ((millis()-last)>120000) {
+      Serial.printf("Pinging MQTT \n");
+      if(! mqtt.ping()) {
+        Serial.printf("Disconnecting \n");
+        mqtt.disconnect();
+      }
+      last = millis();
+  }
+
+  if((millis()-lastTime > 6000)) {
+    if(mqtt.Update()) {
+      Weight2Obj.publish(weight);
+      Serial.printf("Publishing %0.2f \n",weight2); 
+      } 
+    lastTime = millis();
+    if((millis()-lastTime > 6000)) {
+    if(mqtt.Update()) {
+      WeightObj.publish(weight);
+      Serial.printf("Publishing %0.2f \n",weight); 
+      } 
+    lastTime = millis();
+  }
+  
   weight = scale.get_units(SAMPLES);
   weight2 = scale2.get_units(SAMPLES);
-  waitFor(Serial.isConnected, 15000);
-  WiFi.connect();
-  while(WiFi.connecting()) {
-  Serial.printf(".");  
   Serial.println(weight);
   Serial.println(weight2);
   display.clearDisplay();
@@ -112,3 +136,23 @@ void loop() {
   display.display();
   display.clearDisplay();
   }
+
+  // Function to connect and reconnect as necessary to the MQTT server.
+void MQTT_connect() {
+  int8_t ret;
+
+  // Stop if already connected.
+  if (mqtt.connected()) {
+    return;
+  }
+
+  Serial.print("Connecting to MQTT... ");
+
+  while ((ret = mqtt.connect()) != 0) { // connect will return 0 for connected
+       Serial.printf("%s\n",(char *)mqtt.connectErrorString(ret));
+       Serial.printf("Retrying MQTT connection in 5 seconds..\n");
+       mqtt.disconnect();
+       delay(5000);  // wait 5 seconds
+  }
+  Serial.printf("MQTT Connected!\n");
+}
