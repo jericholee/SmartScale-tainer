@@ -11,7 +11,6 @@
 #include "wire.h"
 #include "AdaFruit_SSD1306.h"
 #include "math.h"
-#include "Keypad_Particle.h"
 #include <Adafruit_MQTT.h>
 #include "Adafruit_MQTT/Adafruit_MQTT.h"
 #include "Adafruit_MQTT/Adafruit_MQTT_SPARK.h"
@@ -27,40 +26,24 @@ unsigned long last, lastTime;
 float weight, weight2, rawData, calibration;
 int offset;
 
-//*********************KEYPAD SETUP**********************************
-const byte ROWS = 4;
-const byte COLS = 4;
-char keys[ROWS][COLS] = {
-  {'1', '2', '3', 'A'},
-  {'4', '5', '6', 'B'},
-  {'7', '8', '9', 'C'},
-  {'*', '0', '#', 'D'},
-};
-byte rowPins[ROWS] = { A3, A2, A1, D4 };
-byte colPins[COLS] = { D5, D6, D7, D8 };
-
-// ******************CREATED KEYPAD OBJECT VARIABLE "KEYPAD"******************
-Keypad keypad = Keypad( makeKeymap(keys), rowPins, colPins, ROWS, COLS );
-
-HX711 scale(D3,D2);
-HX711 scale2(D10,D9);
+HX711 scale(A4,A3);
+HX711 scale2(A2,A1);
 Adafruit_SSD1306 display(OLED_RESET);
-Servo myServo;
 TCPClient TheClient;
 Adafruit_MQTT_SPARK mqtt(&TheClient,AIO_SERVER ,AIO_SERVERPORT, AIO_USERNAME,AIO_KEY);
 
 Adafruit_MQTT_Publish WeightObj = Adafruit_MQTT_Publish(&mqtt,AIO_USERNAME"/feeds/WeightOneRead");
 Adafruit_MQTT_Publish Weight2Obj = Adafruit_MQTT_Publish(&mqtt,AIO_USERNAME"/feeds/WeightTwoRead");
 
+// SYSTEM_MODE(SEMI_AUTOMATIC);
 
 void setup() {
   Serial.begin(9600);
-    waitFor(Serial.isConnected, 15000);
+  waitFor(Serial.isConnected, 15000);
   WiFi.connect();
   while(WiFi.connecting()) {
   Serial.printf("."); 
-  delay(2000);
-  Serial.printf("Hello World\n");
+  }
   scale.set_scale();
   scale2.set_scale();
   delay(5000);
@@ -69,9 +52,7 @@ void setup() {
   scale.set_scale(CAL_FACTOR);
   scale2.set_scale(CAL_FACTOR2);
   startOLED();
-  myServo.attach(5);
  }
-}
 
 void loop() {
   if ((millis()-last)>120000) {
@@ -85,10 +66,11 @@ void loop() {
 
   if((millis()-lastTime > 6000)) {
     if(mqtt.Update()) {
-      Weight2Obj.publish(weight);
+      Weight2Obj.publish(weight2);
       Serial.printf("Publishing %0.2f \n",weight2); 
       } 
     lastTime = millis();
+
     if((millis()-lastTime > 6000)) {
     if(mqtt.Update()) {
       WeightObj.publish(weight);
@@ -96,7 +78,7 @@ void loop() {
       } 
     lastTime = millis();
   }
-  
+
   weight = scale.get_units(SAMPLES);
   weight2 = scale2.get_units(SAMPLES);
   Serial.println(weight);
@@ -108,13 +90,8 @@ void loop() {
   display.println(weight);
   display.println(weight2);
   display.display();
-  char key = keypad.getKey();
-    if (key){
-      Serial.println(key);
     }
-  delay(500);
   }
-}
 
 
   void startOLED() {
