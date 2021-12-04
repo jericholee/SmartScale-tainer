@@ -16,20 +16,24 @@
 #include "Adafruit_MQTT/Adafruit_MQTT.h"
 #include "Adafruit_MQTT/Adafruit_MQTT_SPARK.h"
 
+
 //******************DECLARATIONS************************************************
 const int CAL_FACTOR = 1719;
 const int CAL_FACTOR2 = 1748;
 const int SAMPLES = 10;
 const int OLED_RESET = D4;
+const int hexAddress = 0x76;
+int offset;
+
 
 unsigned long last, lastTime;
 float weight, weight2, rawData, calibration;
-int offset;
+
 
 HX711 scale(A4,A3);
 HX711 scale2(A2,A1);
 Adafruit_SSD1306 display(OLED_RESET);
-Adafruit_SSD1306 display2(OLED_RESET);
+Adafruit_SSD1306 display2(-1);
 TCPClient TheClient;
 
 //******************ADAFRUIT.IO SETUP*****************************************
@@ -61,6 +65,7 @@ void setup() {
     scale2.set_scale(CAL_FACTOR2);
    //will add subscribe here once ready and have Hall Sensor activ ---> 
    //    mqtt.subscribe(&hallSensorObj);
+
 }
 
 
@@ -96,9 +101,14 @@ void loop() {
     display.setCursor(0,0);
     display2.setCursor(0,0);
     display.println(weight);
+    display2.setCursor(0,32);
     display2.println(weight2);
     display.display();
     display2.display();
+
+    Serial.printf("Publishing %0.2f \n",Humidity); 
+    Serial.printf("Publishing %0.2f \n",Tempature);
+
 
 }
 
@@ -109,7 +119,6 @@ void startOLED() {
   display.clearDisplay();
   testdrawcircle();// draw mulitple circles
   display.display();
-  delay(2000);
   display.clearDisplay();
   }
 
@@ -121,10 +130,7 @@ void startOLED2() {
   display2.clearDisplay();
   testdrawcircle2();// draw mulitple circles
   display2.display();
-  delay(2000);
   display2.clearDisplay();
-  display2.println(weight2);
-  display2.display();
   }
 
 
