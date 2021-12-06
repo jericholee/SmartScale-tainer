@@ -23,6 +23,8 @@ const int CAL_FACTOR2 = 1748;
 const int SAMPLES = 10;
 const int OLED_RESET = D4;
 const int hexAddress = 0x76;
+const int hallpin = D5;
+int hallVal = 0;
 int offset;
 
 
@@ -63,6 +65,8 @@ void setup() {
     scale2.tare();
     scale.set_scale(CAL_FACTOR);
     scale2.set_scale(CAL_FACTOR2);
+    pinMode(hallpin,INPUT);
+    attachInterrupt(hallpin,containerStatus,RISING);
    //will add subscribe here once ready and have Hall Sensor activ ---> 
    //    mqtt.subscribe(&hallSensorObj);
 
@@ -106,8 +110,7 @@ void loop() {
     display.display();
     display2.display();
 
-    Serial.printf("Publishing %0.2f \n",Humidity); 
-    Serial.printf("Publishing %0.2f \n",Tempature);
+
 
 
 }
@@ -134,16 +137,26 @@ void startOLED2() {
   }
 
 
-  void testdrawcircle(void) {
+void testdrawcircle(void) {
   for (int16_t i=0; i<display.height(); i+=2) {
     display.drawCircle(display.width()/2, display.height()/2, i, WHITE);
     display.display();
   }
 }
 
-  void testdrawcircle2(void) {
+void testdrawcircle2(void) {
   for (int16_t i=0; i<display2.height(); i+=2) {
     display2.drawCircle(display2.width()/2, display2.height()/2, i, WHITE);
     display2.display();
   }
+}
+
+void containerStatus() {
+  hallVal = digitalRead(hallpin);
+  if(hallVal == HIGH) {
+    Serial.printf("Container is closed");
+  }
+    if(hallVal != HIGH) {
+           Serial.printf("Container is open");
+    }
 }
