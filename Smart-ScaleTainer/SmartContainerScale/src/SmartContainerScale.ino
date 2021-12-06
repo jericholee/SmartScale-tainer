@@ -27,6 +27,7 @@ const int hallpin = D5;
 int hallVal = 0;
 int offset;
 
+bool containerStatus();
 
 unsigned long last, lastTime;
 float weight, weight2, rawData, calibration;
@@ -46,6 +47,7 @@ Adafruit_MQTT_SPARK mqtt(&TheClient,AIO_SERVER ,AIO_SERVERPORT, AIO_USERNAME,AIO
 
 Adafruit_MQTT_Publish WeightObj = Adafruit_MQTT_Publish(&mqtt,AIO_USERNAME"/feeds/ScaleOneRead");
 Adafruit_MQTT_Publish Weight2Obj = Adafruit_MQTT_Publish(&mqtt,AIO_USERNAME"/feeds/ScaleTwoRead");
+Adafruit_MQTT_Publish containterStatObj = Adafruit_MQTT_Publish(&mqtt,AIO_USERNAME"/feeds/containerStatus");
 
 
 void setup() {
@@ -81,15 +83,10 @@ void loop() {
        WeightObj.publish(weight);
        Serial.printf("Publishing %0.2f to ScaleTwoReading\n",weight2);
        Weight2Obj.publish(weight2);
+       Serial.printf("Publishing %i to contStatus\n",containerStatus());
+       containterStatObj.publish(containerStatus());
     }
         lastTime = millis();
-    //Receive data from a subscription to an MQTT Feed.
-    // Adafruit_MQTT_Subscribe *subscription;
-    //     while((subscription = mqtt.readSubscription(100))) { //wait for new feed data.
-    //         if(subscription == &mqttObj3) { //assign new data to appropriate variable(Hall Sensor)
-    //         value3 = atof((char *)mqttObj3.lastread);value3 = data from MQTT Subscription
-    //         }
-    //     }
     }
 
     weight = scale.get_units(SAMPLES);
@@ -109,9 +106,7 @@ void loop() {
     display2.println(weight2);
     display.display();
     display2.display();
-
-
-
+    containerStatus();
 
 }
 
@@ -151,12 +146,15 @@ void testdrawcircle2(void) {
   }
 }
 
-void containerStatus() {
+bool containerStatus() {
   hallVal = digitalRead(hallpin);
   if(hallVal == HIGH) {
-    Serial.printf("Container is closed");
+    Serial.printf("Container is open\n");
   }
     if(hallVal != HIGH) {
-           Serial.printf("Container is open");
+           Serial.printf("Container is closed\n");
     }
+return hallVal;
 }
+
+

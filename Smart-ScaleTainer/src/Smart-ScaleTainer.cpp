@@ -50,10 +50,11 @@ Adafruit_MQTT_Publish Weight2Obj = Adafruit_MQTT_Publish(&mqtt,AIO_USERNAME"/fee
 
 void setup() {
   Serial.begin(9600);
-    waitFor(Serial.isConnected, 15000);
+  waitFor(Serial.isConnected, 15000);
   WiFi.connect();
   while(WiFi.connecting()) {
   Serial.printf("."); 
+  }
   scale.set_scale();
   scale2.set_scale();
   delay(5000);
@@ -63,7 +64,6 @@ void setup() {
   scale2.set_scale(CAL_FACTOR2);
   startOLED();
  }
-}
 
 void loop() {
   if ((millis()-last)>120000) {
