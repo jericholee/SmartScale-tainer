@@ -37,9 +37,13 @@ const int SAMPLES = 10;
 const int OLED_RESET = D4;
 const int hexAddress = 0x76;
 const int hallpin = D5;
+const int button = A0;
 int hallVal = 0;
 int offset;
+int buttonVal = 0;
+int buttonState;
 
+bool buttonClick();
 bool containerStatus();
 
 unsigned long last, lastTime;
@@ -81,12 +85,13 @@ void setup() {
     scale.set_scale(CAL_FACTOR);
     scale2.set_scale(CAL_FACTOR2);
     pinMode(hallpin,INPUT);
+    pinMode(button, INPUT);
+    attachInterrupt(button, buttonClick, FALLING);
     attachInterrupt(hallpin,containerStatus,RISING);
-   //will add subscribe here once ready and have Hall Sensor activ ---> 
-   //    mqtt.subscribe(&hallSensorObj);
+
 
 }
-
+  
 
 void loop() {
     if((millis()-lastTime > 15000)) {
@@ -168,6 +173,17 @@ bool containerStatus() {
            Serial.printf("Container is closed\n");
     }
 return hallVal;
+}
+
+bool buttonClick() {
+  buttonVal = digitalRead(button);
+  if(buttonVal) {
+    Serial.printf("button is pressed \n");
+  }
+  else {
+    Serial.printf("button is not pressed \n");
+    delay(250);
+  }
 }
 
 
