@@ -19,7 +19,7 @@
 //******************DECLARATIONS************************************************
 const int CAL_FACTOR = 1719;
 const int CAL_FACTOR2 = 1748;
-const int SAMPLES = 10;
+const int SAMPLES = 5;
 const int OLED_RESET = D4;
 const int hexAddress = 0x76;
 const int hallpin = D5;
@@ -32,9 +32,6 @@ int hallVal = 0;
 int offset;
 int buttonVal = 0;
 
-
-
-bool buttonClick();
 bool containerStatus();
 
 unsigned long last, lastTime;
@@ -82,11 +79,9 @@ void setup() {
     pinMode(hallpin,INPUT);
     strip.begin();
     strip.show();
-    // pinMode(button, INPUT);
-    // attachInterrupt(button, buttonClick, RISING);
+    pinMode(button, INPUT);
+    attachInterrupt(button, recordWeight, RISING);
     attachInterrupt(hallpin,containerStatus,RISING);
-
-
 }
   
 
@@ -104,16 +99,19 @@ void loop() {
         lastTime = millis();
     }
 
-    parentWeight = weight;
-    childWeight = weight2;
-    totalWeight = weight + weight2;
-    if((startWeight - totalWeight) < threshold) {
-
-    }
-
-
     weight = scale.get_units(SAMPLES);
     weight2 = scale2.get_units(SAMPLES);
+    // totalWeight = weight + weight2;
+    if((startWeight - weight) <= weight2) {
+      strip.setPixelColor(0, strip.Color(255, 0, 0));
+      strip.show();
+    }
+      else {
+      strip.setPixelColor(0, strip.Color(0, 255, 0));
+      strip.show();
+      }
+
+
     Serial.println(weight);
     Serial.println(weight2);
     display.clearDisplay();
@@ -130,7 +128,6 @@ void loop() {
     display.display();
     display2.display();
     containerStatus();
-
 }
 
 void startOLED() {
@@ -184,17 +181,12 @@ return hallVal;
 
 // void buttonClick() {
 //   buttonVal = digitalRead(button);
-//   if(buttonVal) {
-//     Serial.printf("button is pressed \n");
-//   }
-//   else {
-//     Serial.printf("button is not pressed \n");
-//     delay(250);
+//   if(buttonVal != HIGH) {
+//     recordWeight();
 //   }
 // }
 
 void recordWeight() {
   startWeight = weight;
-  Serial.println("scale.get_units(SAMPLES)");
 }
 
