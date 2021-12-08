@@ -6,16 +6,15 @@
  */
 
 //******************LIBRARIES************************************************
-
-#include "credentials.h"
-#include "HX711.h"
-#include "AdaFruit_SSD1306.h"
-#include "wire.h"
-#include "math.h"
 #include <Adafruit_MQTT.h>
 #include "Adafruit_MQTT/Adafruit_MQTT.h"
 #include "Adafruit_MQTT/Adafruit_MQTT_SPARK.h"
-
+#include "AdaFruit_SSD1306.h"
+#include "credentials.h"
+#include "HX711.h"
+#include "math.h"
+#include "neopixel.h"
+#include "wire.h"
 
 //******************DECLARATIONS************************************************
 const int CAL_FACTOR = 1719;
@@ -25,17 +24,23 @@ const int OLED_RESET = D4;
 const int hexAddress = 0x76;
 const int hallpin = D5;
 const int button = A0;
+const int PIXEL_PIN = D3;
+const int PIXEL_COUNT = 1;
+const int PIXEL_TYPE = WS2812B;
+int threshold = 10;
 int hallVal = 0;
 int offset;
 int buttonVal = 0;
-int buttonState;
+
+
 
 bool buttonClick();
 bool containerStatus();
 
 unsigned long last, lastTime;
-float weight, weight2, rawData, calibration;
-
+float weight, weight2, rawData, calibration, parentWeight, childWeight;
+float startWeight = 0;
+float totalWeight;
 
 HX711 scale(A4,A3);
 HX711 scale2(A2,A1);
@@ -53,6 +58,9 @@ Adafruit_MQTT_Publish WeightObj = Adafruit_MQTT_Publish(&mqtt,AIO_USERNAME"/feed
 Adafruit_MQTT_Publish Weight2Obj = Adafruit_MQTT_Publish(&mqtt,AIO_USERNAME"/feeds/ScaleTwoRead");
 Adafruit_MQTT_Publish containterStatObj = Adafruit_MQTT_Publish(&mqtt,AIO_USERNAME"/feeds/containerStatus");
 
+//******************NeoPixel**************************************************
+
+Adafruit_NeoPixel strip(PIXEL_COUNT, PIXEL_PIN, PIXEL_TYPE);
 
 void setup() {
     Serial.begin(9600);
@@ -72,8 +80,10 @@ void setup() {
     scale.set_scale(CAL_FACTOR);
     scale2.set_scale(CAL_FACTOR2);
     pinMode(hallpin,INPUT);
-    pinMode(button, INPUT);
-    attachInterrupt(button, buttonClick, FALLING);
+    strip.begin();
+    strip.show();
+    // pinMode(button, INPUT);
+    // attachInterrupt(button, buttonClick, RISING);
     attachInterrupt(hallpin,containerStatus,RISING);
 
 
@@ -93,6 +103,14 @@ void loop() {
     }
         lastTime = millis();
     }
+
+    parentWeight = weight;
+    childWeight = weight2;
+    totalWeight = weight + weight2;
+    if((startWeight - totalWeight) < threshold) {
+
+    }
+
 
     weight = scale.get_units(SAMPLES);
     weight2 = scale2.get_units(SAMPLES);
@@ -162,15 +180,21 @@ bool containerStatus() {
 return hallVal;
 }
 
-bool buttonClick() {
-  buttonVal = digitalRead(button);
-  if(buttonVal) {
-    Serial.printf("button is pressed \n");
-  }
-  else {
-    Serial.printf("button is not pressed \n");
-    delay(250);
-  }
-}
 
+
+// void buttonClick() {
+//   buttonVal = digitalRead(button);
+//   if(buttonVal) {
+//     Serial.printf("button is pressed \n");
+//   }
+//   else {
+//     Serial.printf("button is not pressed \n");
+//     delay(250);
+//   }
+// }
+
+void recordWeight() {
+  startWeight = weight;
+  Serial.println("scale.get_units(SAMPLES)");
+}
 
