@@ -27,15 +27,13 @@ const int button = A0;
 const int PIXEL_PIN = D3;
 const int PIXEL_COUNT = 1;
 const int PIXEL_TYPE = WS2812B;
-int threshold = 10;
 int hallVal = 0;
-int offset;
 int buttonVal = 0;
 
 bool containerStatus();
 
 unsigned long last, lastTime;
-float weight, weight2, rawData, calibration, parentWeight, childWeight;
+float weight, weight2, rawData, calibration;
 float startWeight = 0;
 float totalWeight;
 
@@ -58,6 +56,8 @@ Adafruit_MQTT_Publish containterStatObj = Adafruit_MQTT_Publish(&mqtt,AIO_USERNA
 //******************NeoPixel**************************************************
 
 Adafruit_NeoPixel strip(PIXEL_COUNT, PIXEL_PIN, PIXEL_TYPE);
+
+//********************Beginning of Code******************************************
 
 void setup() {
     Serial.begin(9600);
@@ -101,7 +101,6 @@ void loop() {
 
     weight = scale.get_units(SAMPLES);
     weight2 = scale2.get_units(SAMPLES);
-    // totalWeight = weight + weight2;
     if((startWeight - weight) <= weight2) {
       strip.setPixelColor(0, strip.Color(255, 0, 0));
       strip.show();
@@ -177,16 +176,7 @@ bool containerStatus() {
 return hallVal;
 }
 
-
-
-// void buttonClick() {
-//   buttonVal = digitalRead(button);
-//   if(buttonVal != HIGH) {
-//     recordWeight();
-//   }
-// }
-
-void recordWeight() {
+// Records starting weight on scale #1 to compare value to scale #2 to see discrepencies  
+void recordWeight() { 
   startWeight = weight;
 }
-
